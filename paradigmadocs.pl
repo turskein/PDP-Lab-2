@@ -8,13 +8,17 @@ getDay([Dia|_], SDay):- Dia= SDay.
 getMonth([_,Mes|_], SMonth):- Mes = SMonth.
 getYea([_,_,Anio|_], SYear):- Anio = SYear.
 
-
-
-
-
-
-
-
+dateToString(Date,StrOut):-
+    getDay(Date,Day),
+    number_string(Day,StrDay),
+    getMonth(Date,Month),
+    number_string(Month,StrMonth),
+    getYea(Date,Year),
+    number_string(Year,StrYear),
+    string_concat(StrDay,"-",D),
+    string_concat(StrMonth,"-",M),
+    string_concat(M,StrYear,Y),
+    string_concat(D,Y,StrOut).
 
 
 %---------------------------------------------------------------------------------
@@ -62,6 +66,8 @@ addContent(DocEntrada,Fecha,NewContent,DocSalida):-
     setContent(DocEntrada,NewVersions,DocSalida).
 
 getId([_,_,Id|_],Id).
+getTitle([Title|_],Title).
+getCreation([_,Creation|_],Creation).
 getContent([_,_,_,_,Content,_|_],Content).
 getAccesses([_,_,_,_,_,Accesses], Accesses).
 
@@ -98,8 +104,65 @@ addMultiplyAccesses([LastUsername|NextUsernames],Permissions,OldAccesses,NewAcce
     access(LastUsername,Permissions,A),
     addOneAccess(NextNew,A,NewAccesses).
 
+showDoc(Documento, User, StrOut):- isOwner(Documento,User),showDocForOwner(Documento,User,StrOut),!.
+ShowDoc(Documento, User. StrOut):- canWhatinDocs(Documento,"R"),showDocForInvited(Documento,User,StrOut).
+
+%descripción: retorna el contenido de la última versión del doc
+%dominio: lista de versiones(list versions from docs), str
+showLastVersion(ListVersions,StrOut):-
+    contarlista(ListVersions,Largo),
+    nth1(Largo,ListVersions,TheLastVersion),
+    versionToString(TheLastVersion,StrVersion),
+    string_concat(StrVersion,"\n",StrOut).
+
+%descripción: retorna el contenido de todas las versiones de una lista de versiones
+%dominio: lista de versiones(list versions from docs), str
+showEveryVersion([],"").
+showEveryVersion([Head|Next],StrOut):-
+    showEveryVersion(Next,StrAnother),
+    versionToString(Head,StrVersion),
+    string_concat(StrVersion,"\n",WithJump),
+    string_concat(StrAnother,WithJump,StrOut).
+
+%descripción: retorna como string el contenido de un acceso en particular
+%dominio: lista de accesos (list access from docs), nombre de usuario(str),string de salida
+showOneAccess([Head|_],User,StrOut):-
+    getNameAccess(Head,User),
+    !,
+    accessToString(Head,StrOut).
+showOneAccess([_|NextAccess],User,StrOut):-
+    showOneAccess(NextAccess,User,StrOut).
 
 
+%descripción: retorna como string el contenido de todos los  accesos del documento
+%dominio: lista de accesos (list access from docs), string de salida
+showEveryAccess([],"").
+showEveryAccess([Head|Next],StrOut):- 
+    showEveryAccess(Next,Out),
+    string_concat(Out,"\n",WithJump),
+    accessToString(Head,StrAccess),
+    string_concat(WithJump,StrAccess,StrOut).
+
+%descripción: retorna como string todo el contenido de un documento.
+showDocForOwner(Documento,StrOut):-
+    getTitle(Documento,Title),%=============Title
+    getCreation(Documento,DateCreation),
+    dateToString(DateCreation,StrDate),%=============StrDate
+    getContent(Documento,Versions),
+    showEveryAccess(Versions,StrVersions),%=============StrVersions
+    getAccesses(Documento, Accesses),
+    showEveryAccess(Accesses,StrAccess), %=============StrAccess
+    string_concat("======",Title,Half),
+    string_concat(Half,"======",TheTitle),
+    string_concat(TheTitle,"\n",TheTitleW),
+    string_concat("Fecha de creacion: ",StrDate,TheDate),
+    string_concat(TheDate,"\n",TheDateW),
+    string_concat("---Versions---\n",StrVersions,BlockVersions),
+    string_concat("---Accesses---\n",StrAccess,BlockAccesses),
+    string_concat(TheTitleW,TheDateW,A),
+    string_concat(A,BlockVersions,B),
+    string_concat(B,BlockAccesses,C),
+    string_concat(C,"\n",StrOut).
 
 
 %---------------------------------------------------------------------------------
@@ -110,9 +173,25 @@ addMultiplyAccesses([LastUsername|NextUsernames],Permissions,OldAccesses,NewAcce
 version(Contenido,Date,Id,[Contenido,Date,Id]).
 
 getContenidoVrsn([Contenido|_],Contenido).
+getDateVrsn([_,Date|_],Date).
+getIdVrsn([_,_,Id|_],Id).
 
 setIdVersion([Contenido,Date,_],NewId,[Contenido,Date,NewId]).
 
+versionToString(Version,StrOut):-
+    getContenidoVrsn(Version,ContentVrsn),
+    getDateVrsn(Version,Date),
+    dateToString(Date,StrDate),
+    getIdVrsn(Version,Id),
+    number_string(Id,StrId),
+    string_concat("Contenido: ",ContentVrsn,A),
+    string_concat(A,"\n",B),
+    string_concat("Fecha: ",StrDate,F),
+    string_concat(F,"\n",G),
+    string_concat("Id: ", StrId, I),
+    string_concat(I,"\n",J),
+    string_concat(B,G,M),
+    string_concat(M,J,StrOut).
 
 
 
@@ -133,6 +212,27 @@ getListAccessUser([_,LA|_],LA).
 canWhat([],_):- !,fail.
 canWhat([FA|_],FA):- !, true.
 canWhat([_|LAU],Letter):-canWhat(LAU,Letter).
+
+% descripción: muestra los tipos de accesos que presenta una lista de 
+% accesos perteneciente a un acceso en particular
+%dominio: lista de tipos de acceso(list kind of access from access), string
+listAccessToString([],"").
+listAccessToString([Head|Next],StrOut):-
+    listAccessToString(Next,Out),
+    string_concat(Out,"-",XD),
+    string_concat(XD,Head,StrOut).
+
+accessToString(Access,StrOut):-
+    getNameAccess(Access,Name),
+    getListAccessUser(Access,ListAccesses),
+    listAccessToString(ListAccesses, StrListAccesses),
+    string_concat("Nombre: ",Name, N),
+    string_concat(N,"\n",K),
+    string_concat("Tipos de accesos: ",StrListAccesses,A),
+    string_concat(A,"\n",B),
+    string_concat(K,B,StrOut).
+
+
 
 
 
@@ -271,6 +371,8 @@ paradigmaDocsRestoreVersion(Sn1, DocumentId, IdVersion, Sn2):-
     setDocsPrdc(Sn1,NewListDocs,Sn),
     closelog(Sn,Sn2).
 
+
+
 %---------------------------------------------------------------------------------
 %-----------------------------------testeos---------------------------------------
 %---------------------------------------------------------------------------------
@@ -283,7 +385,7 @@ test1(PD4):-
     paradigmaDocsRegister(PD2, D2, "crios", "qwert", PD3),
     paradigmaDocsRegister(PD3, D3, "alopez", "asdfg", PD4).
 
-test2():- 
+test2(The):-
     date(20, 12, 2015, D1),
     date(1, 12, 2021, D2), date(3,12, 2021, D3), 
     paradigmaDocs("google docs", D1, PD1),
@@ -299,7 +401,8 @@ test2():-
     paradigmaDocsLogin(PD10, "vflores", "hola123", PD11),
     paradigmaDocsAdd(PD11, 0, D1, " este es un nuevo texto", PD12),
     paradigmaDocsLogin(PD12, "vflores", "hola123", PD13),
-    paradigmaDocsRestoreVersion(PD13,0,0,PD14).
+    paradigmaDocsRestoreVersion(PD13,0,0,PD14),
+    getDocsPrdc(PD14,Docs),nth1(1,Docs,The).
 
 test3():-canWhatinDocs(["titulo",[1,2,2020],0,"Owner","contenido",[["vflores",["R","W"]]]],"vflores","R").
 
