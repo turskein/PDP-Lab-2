@@ -27,9 +27,28 @@ dateToString(Date,StrOut):-
 %de la forma: nombre(string), contrase�a(string), fecha(date),
 user(Username, Password, Date, [Username, Password, Date]).
 
+getUsernameUser([Username|_],Username).
+getPassUser([_,Pass|_],Pass).
+getDateUser([_,_,Date],Date).
+
 sameUsername([Username1|_],[Username1|_]).
 
 samePassword([_,Pass1|_],[_,Pass1|_]).
+
+userToString(User,StrOut):-
+    getUsernameUser(User, Username),
+    getPassUser(User, Pass),
+    getDateUser(User, Date),
+    dateToString(Date,StrDate),
+    string_concat("Username: ", Username,LineUser),
+    string_concat(LineUser,"\n",LineUserW),
+    string_concat("Password: ", Pass,LinePass),
+    string_concat(LinePass,"\n",LinePassW),
+    string_concat("Fecha de creacion: ",StrDate,LineDate),
+    string_concat(LineDate,"\n", LineDateW),
+    string_concat(LineUserW,LinePassW,A),
+    string_concat(A,LineDateW,StrOut).
+
 
 
 
@@ -68,6 +87,7 @@ addContent(DocEntrada,Fecha,NewContent,DocSalida):-
 getId([_,_,Id|_],Id).
 getTitle([Title|_],Title).
 getCreation([_,Creation|_],Creation).
+getOwner([_,_,_,Owner|_],Owner).
 getContent([_,_,_,_,Content,_|_],Content).
 getAccesses([_,_,_,_,_,Accesses], Accesses).
 
@@ -84,9 +104,8 @@ canWhatinDocs([_,_,_,_,_,LA|_],Name,Letter):-
     canWhat(LAU,Letter).
 
 %lista de accesos(list from docs), Name(string)
-getAccessSomeUser([],_,_):-!,fail.
-getAccessSomeUser([FAU|_],Name,AFU):- getNameAccess(FAU,Name), FAU = AFU.
-getAcessSomeUser([_|LAU],Name,AFU):- getAcessSomeUser(LAU,Name,AFU).
+getAccessSomeUser([FAU|_],Name,FAU):- getNameAccess(FAU,Name),!.
+getAccessSomeUser([_|LAU],Name,AFU):- getAccessSomeUser(LAU,Name,AFU).
 
 % dominio: lista de accesos del doc(list accessess from doc), acceso a
 % agregar (access)
@@ -94,7 +113,8 @@ addOneAccess([],Access,[Access]).
 addOneAccess([LastAccess|NextAccesses],Access,[Access|NextAccesses]):-
     getNameAccess(LastAccess,Name1),
     getNameAccess(Access,Name1),!.
-addOneAccess([LastAccess|NextAccess],Access,[LastAccess|Accesses]):-addOneAccess(NextAccess,Access,Accesses).
+addOneAccess([LastAccess|NextAccess],Access,[LastAccess|Accesses]):-
+    addOneAccess(NextAccess,Access,Accesses).
 
 % dominio: lista nombres usuarios(list usernames), lista permisos(list),
 % lista de accesos del documento(list access from doc)
@@ -104,13 +124,25 @@ addMultiplyAccesses([LastUsername|NextUsernames],Permissions,OldAccesses,NewAcce
     access(LastUsername,Permissions,A),
     addOneAccess(NextNew,A,NewAccesses).
 
-showDoc(Documento, User, StrOut):- isOwner(Documento,User),showDocForOwner(Documento,User,StrOut),!.
-ShowDoc(Documento, User. StrOut):- canWhatinDocs(Documento,"R"),showDocForInvited(Documento,User,StrOut).
+%descripción: validará StrOut como la muestra del documento señalado,
+% de acuerdo al tipo de permiso que tiene el usuario
+%dominio: doc(documento a decidir cómo mostrar), nombre de usuario(string), string de salida
+showDoc(Documento, User, StrOut):-
+    isOwner(Documento,User),
+    showDocForOwner(Documento,StrOut),
+    !.
+showDoc(Documento,User,StrOut):-
+    canWhatinDocs(Documento,User,"R"),
+    !,
+    showDocForInvited(Documento,User,StrOut).
+showDoc(Documento,"",StrOut):-
+    showAllInformationDoc(Documento,StrOut).
+showDoc(_,_,"").
 
 %descripción: retorna el contenido de la última versión del doc
 %dominio: lista de versiones(list versions from docs), str
 showLastVersion(ListVersions,StrOut):-
-    contarlista(ListVersions,Largo),
+    contarlista(ListVersions,0,Largo),
     nth1(Largo,ListVersions,TheLastVersion),
     versionToString(TheLastVersion,StrVersion),
     string_concat(StrVersion,"\n",StrOut).
@@ -143,14 +175,18 @@ showEveryAccess([Head|Next],StrOut):-
     accessToString(Head,StrAccess),
     string_concat(WithJump,StrAccess,StrOut).
 
-%descripción: retorna como string todo el contenido de un documento.
-showDocForOwner(Documento,StrOut):-
+%descripción: retorna como string todo el contenido de un documento
+%dominio: doc(documen a mostrar), string de sálida
+showAllInformationDoc(Documento,StrOut):-
     getTitle(Documento,Title),%=============Title
     getCreation(Documento,DateCreation),
     dateToString(DateCreation,StrDate),%=============StrDate
     getContent(Documento,Versions),
-    showEveryAccess(Versions,StrVersions),%=============StrVersions
+    showEveryVersion(Versions,StrVersions),%=============StrVersions
     getAccesses(Documento, Accesses),
+    getOwner(Documento,Owner),
+    string_concat("Creador: ",Owner,StrOwner),
+    string_concat(StrOwner,"\n",StrOwnerW),
     showEveryAccess(Accesses,StrAccess), %=============StrAccess
     string_concat("======",Title,Half),
     string_concat(Half,"======",TheTitle),
@@ -158,11 +194,53 @@ showDocForOwner(Documento,StrOut):-
     string_concat("Fecha de creacion: ",StrDate,TheDate),
     string_concat(TheDate,"\n",TheDateW),
     string_concat("---Versions---\n",StrVersions,BlockVersions),
-    string_concat("---Accesses---\n",StrAccess,BlockAccesses),
+    string_concat("---Accesses---",StrAccess,BlockAccesses),
     string_concat(TheTitleW,TheDateW,A),
+    string_concat(A,StrOwnerW,N),
+    string_concat(N,BlockVersions,B),
+    string_concat(B,BlockAccesses,C),
+    string_concat(C,"\n",StrOut).
+
+%descripción: retorna como string todo el contenido de un documento
+%dominio: doc(documen a mostrar), string de sálida
+showDocForOwner(Documento,StrOut):-
+    getTitle(Documento,Title),%=============Title
+    getCreation(Documento,DateCreation),
+    dateToString(DateCreation,StrDate),%=============StrDate
+    getContent(Documento,Versions),
+    showEveryVersion(Versions,StrVersions),%=============StrVersions
+    getAccesses(Documento, Accesses),
+    string_concat("Creador: Propio","\n",StrOwnerW),
+    showEveryAccess(Accesses,StrAccess), %=============StrAccess
+    string_concat("======",Title,Half),
+    string_concat(Half,"======",TheTitle),
+    string_concat(TheTitle,"\n",TheTitleW),
+    string_concat("Fecha de creacion: ",StrDate,TheDate),
+    string_concat(TheDate,"\n",TheDateW),
+    string_concat("---Versions---\n",StrVersions,BlockVersions),
+    string_concat("---Accesses---",StrAccess,BlockAccesses),
+    string_concat(TheTitleW,TheDateW,A),
+    string_concat(A,StrOwnerW,N),
+    string_concat(N,BlockVersions,B),
+    string_concat(B,BlockAccesses,C),
+    string_concat(C,"\n",StrOut).
+
+showDocForInvited(Documento, User, StrOut):-
+    getTitle(Documento,Title),
+    getAccesses(Documento, Accesses),
+    getContent(Documento,ContenidoDoc),
+    showOneAccess(Accesses, User, TheAccess),
+    showLastVersion(ContenidoDoc, LastVersion),
+    string_concat("======",Title,Half),
+    string_concat(Half,"======",TheTitle),
+    string_concat(TheTitle,"\n",TheTitleW),
+    string_concat("---Versions---\n",LastVersion,BlockVersions),
+    string_concat("---Accesses---\n",TheAccess,BlockAccesses),
+    string_concat(TheTitleW,"",A),
     string_concat(A,BlockVersions,B),
     string_concat(B,BlockAccesses,C),
     string_concat(C,"\n",StrOut).
+    
 
 
 %---------------------------------------------------------------------------------
@@ -238,14 +316,6 @@ accessToString(Access,StrOut):-
 
 
 
-
-
-
-
-
-
-
-
 /*---------------------------------------------------------------------------------
 ------------Tda Paradigmadocs----------------------------------------------------
 ---------------------------------------------------------------------------------
@@ -254,18 +324,13 @@ accessToString(Access,StrOut):-
 
 paradigmaDocs(Name, Date, [Name, Date, "", [],[]]).
 
-
-
 setUsersPrdc([Name,Date,Log,_,Docs|_],NewUsers,[Name,Date,Log,NewUsers,Docs]).
-
 setLogPrdc([Name,Date,_,Users,Docs|_],NewLog,[Name,Date,NewLog,Users,Docs]).
-
 setDocsPrdc([Name,Date,Log,Users,_|_],NewDocs,[Name,Date,Log,Users,NewDocs]).
-
+getNamePrdc([Name|_],Name).
+getDatePrdc([_,Date|_],Date).
 getUsersPrdc([_,_,_,Users,_|_],Users).
-
 getLogPrdc([_,_,Log,_,_|_],Log).
-
 getDocsPrdc([_,_,_,_,Docs|_],Docs).
 
 existlog(Sn):-not(getLogPrdc(Sn,"")).
@@ -300,6 +365,25 @@ captchaUsers([FNewUser|NewUsers],UsersFPrdc):-
     existUsername(UsersFPrdc,U),
     captchaUsers(NewUsers,UsersFPrdc).
 
+showEveryDoc([],_, "").
+showEveryDoc([FirstDoc|NextDocs],User,StrOut):-
+    showEveryDoc(NextDocs,User,OutNextDocs),
+    showDoc(FirstDoc, User, StrFirstDoc),
+    string_concat(StrFirstDoc,OutNextDocs,StrOut).
+
+showEveryUser([],_,"").
+
+showEveryUser([FirstUser|NextUsers],"",StrOut):-
+    showEveryUser(NextUsers,"",OutNextUsers),
+    string_concat(OutNextUsers,"\n",W),
+    userToString(FirstUser,StrUser),
+    string_concat(W,StrUser,StrOut).
+
+showEveryUser([FirstUser|_],Username,StrOut):-
+    getUsernameUser(FirstUser,Username),
+    userToString(FirstUser,StrOut).
+showEveryUser([_|NextUsers],Username,StrOut):-
+    showEveryUser(NextUsers,Username,StrOut).
 
 
 
@@ -371,6 +455,42 @@ paradigmaDocsRestoreVersion(Sn1, DocumentId, IdVersion, Sn2):-
     setDocsPrdc(Sn1,NewListDocs,Sn),
     closelog(Sn,Sn2).
 
+paradigmaDocsToString(Sn1, StrOut):-
+    existlog(Sn1),
+    getUsersPrdc(Sn1,Users),
+    getLogPrdc(Sn1,Logged),
+    getDocsPrdc(Sn1,Docs),
+    showEveryUser(Users, Logged, StrUsers),
+    showEveryDoc(Docs,Logged,StrDocs),
+    string_concat("#######Users#######\n",StrUsers,BlockUsers),
+    string_concat("#######Docs#######\n",StrDocs,BlockDocs),
+    string_concat(BlockUsers,BlockDocs,StrOut).
+
+paradigmaDocsToString(Sn1, StrOut):-
+    not(existlog(Sn1)),
+    getUsersPrdc(Sn1,Users),
+    getLogPrdc(Sn1,Logged),
+    getDocsPrdc(Sn1,Docs),
+    showEveryUser(Users, Logged, StrUsers),
+    showEveryDoc(Docs,Logged,StrDocs),
+    string_concat("#######Users#######\n",StrUsers,BlockUsers),
+    string_concat("#######Docs#######\n",StrDocs,BlockDocs),
+    string_concat(BlockUsers,BlockDocs,NextInfor),
+
+    getNamePrdc(Sn1,NamePrdc),
+    string_concat("Nombre plataforma: ",NamePrdc,LineName),
+    string_concat(LineName,"\n",LineNameW),
+
+    getDatePrdc(Sn1,DatePrdc),
+    dateToString(DatePrdc,StrDate),
+    string_concat("Fecha creacion plataforma: ", StrDate,LineDate),
+    string_concat(LineDate,"\n",LineDateW),
+    string_concat(LineNameW,LineDateW,Infor),
+
+    string_concat(Infor,NextInfor,StrOut).
+
+
+
 
 
 %---------------------------------------------------------------------------------
@@ -385,7 +505,7 @@ test1(PD4):-
     paradigmaDocsRegister(PD2, D2, "crios", "qwert", PD3),
     paradigmaDocsRegister(PD3, D3, "alopez", "asdfg", PD4).
 
-test2(The):-
+test2(Usuario,StrOut):-
     date(20, 12, 2015, D1),
     date(1, 12, 2021, D2), date(3,12, 2021, D3), 
     paradigmaDocs("google docs", D1, PD1),
@@ -402,7 +522,28 @@ test2(The):-
     paradigmaDocsAdd(PD11, 0, D1, " este es un nuevo texto", PD12),
     paradigmaDocsLogin(PD12, "vflores", "hola123", PD13),
     paradigmaDocsRestoreVersion(PD13,0,0,PD14),
-    getDocsPrdc(PD14,Docs),nth1(1,Docs,The).
+    getDocsPrdc(PD14,Docs),
+    showEveryDoc(Docs,Usuario,StrOut).
+
+test6(X):-
+    date(20, 12, 2015, D1),
+    date(1, 12, 2021, D2), date(3,12, 2021, D3), 
+    paradigmaDocs("google docs", D1, PD1),
+    paradigmaDocsRegister(PD1, D2, "vflores", "hola123", PD2),
+    paradigmaDocsRegister(PD2, D2, "crios", "qwert", PD3),
+    paradigmaDocsRegister(PD3, D3, "alopez", "asdfg", PD4),
+    paradigmaDocsLogin(PD4, "vflores", "hola123", PD5),
+    paradigmaDocsCreate(PD5, D2, "archivo 1", "hola mundo, este es elcontenido de un archivo", PDK),
+    paradigmaDocsLogin(PDK, "vflores", "hola123", PD7),
+    paradigmaDocsShare(PD7,0,["W","R"],["crios","alopez"],PD8),
+    paradigmaDocsLogin(PD8, "vflores", "hola123", PD9),
+    paradigmaDocsShare(PD9,0,["W"],["alopez"],PD10),
+    paradigmaDocsLogin(PD10, "vflores", "hola123", PD11),
+    paradigmaDocsAdd(PD11, 0, D1, " este es un nuevo texto", PD12),
+    paradigmaDocsLogin(PD12, "vflores", "hola123", PD13),
+    paradigmaDocsRestoreVersion(PD13,0,0,PD14),
+    paradigmaDocsToString(PD14,X).
+   
 
 test3():-canWhatinDocs(["titulo",[1,2,2020],0,"Owner","contenido",[["vflores",["R","W"]]]],"vflores","R").
 
