@@ -241,6 +241,8 @@ showDocForInvited(Documento, User, StrOut):-
     string_concat(B,BlockAccesses,C),
     string_concat(C,"\n",StrOut).
     
+revokeAccessesDoc(Documento, NewDocument):-
+    setAccesses(Documento,[],NewDocument).
 
 
 %---------------------------------------------------------------------------------
@@ -385,6 +387,29 @@ showEveryUser([FirstUser|_],Username,StrOut):-
 showEveryUser([_|NextUsers],Username,StrOut):-
     showEveryUser(NextUsers,Username,StrOut).
 
+%dominio: list Docs, User, IdDoc, New list of docs
+revokeAccessesifOwner([FirstDoc|NextDocs], User, Id,[NewDoc|NextDocs]):-
+    getId(FirstDoc,Id),
+    isOwner(FirstDoc, User),
+    revokeAccessesDoc(FirstDoc,NewDoc),!.
+revokeAccessesifOwner([FirstDoc|NextDocs],User,Id,[FirstDoc|NewDocs]):-
+    revokeAccessesifOwner(NextDocs,User,Id,NewDocs).
+
+%dominio: list Docs, User, list of id's Docs, New list of docs
+revokemultiplyAccesesifOwner([],_, OldDocs,OldDocs).
+revokemultiplyAccesesifOwner([FirstId|NextIds], User, OldDocs,NewDocs):-
+    revokeAccessesifOwner(OldDocs, User,FirstId,BeforesNewDocs),
+    revokemultiplyAccesesifOwner(NextIds, User, BeforesNewDocs,NewDocs).
+
+revokeAccessesAllDocsifOwner(_,[],[]).
+revokeAccessesAllDocsifOwner(User,[FirstDoc|NextDocs],[NewDoc|BeforeNextDocs]):-
+    isOwner(FirstDoc,User),
+    revokeAccessesDoc(FirstDoc,NewDoc),
+    revokeAccessesAllDocsifOwner(User, NextDocs, BeforeNextDocs).
+revokeAccessesAllDocsifOwner(User,[FirstDoc|NextDocs],[FirstDoc|BeforeNextDocs]):-
+    revokeAccessesAllDocsifOwner(User, NextDocs, BeforeNextDocs).
+
+
 
 
 
@@ -489,6 +514,24 @@ paradigmaDocsToString(Sn1, StrOut):-
 
     string_concat(Infor,NextInfor,StrOut).
 
+paradigmaDocsRevokeAllAccesses(Sn1, DocumentIds, Sn2):-
+    existlog(Sn1),
+    not(DocumentIds = []),
+    getLogPrdc(Sn1, Logged),
+    getDocsPrdc(Sn1, ListDocs),
+    revokemultiplyAccesesifOwner(DocumentIds,Logged,ListDocs,NewListDocs),
+    setDocsPrdc(Sn1,NewListDocs,Sn),
+    closelog(Sn,Sn2),!.
+
+paradigmaDocsRevokeAllAccesses(Sn1, [], Sn2):-
+    existlog(Sn1),
+    getLogPrdc(Sn1, Logged),
+    getDocsPrdc(Sn1, ListDocs),
+    revokeAccessesAllDocsifOwner(Logged,ListDocs,NewListDocs),
+    setDocsPrdc(Sn1,NewListDocs,Sn),
+    closelog(Sn,Sn2).
+
+
 
 
 
@@ -525,7 +568,7 @@ test2(Usuario,StrOut):-
     getDocsPrdc(PD14,Docs),
     showEveryDoc(Docs,Usuario,StrOut).
 
-test6(X):-
+test6(PD16):-
     date(20, 12, 2015, D1),
     date(1, 12, 2021, D2), date(3,12, 2021, D3), 
     paradigmaDocs("google docs", D1, PD1),
@@ -542,7 +585,9 @@ test6(X):-
     paradigmaDocsAdd(PD11, 0, D1, " este es un nuevo texto", PD12),
     paradigmaDocsLogin(PD12, "vflores", "hola123", PD13),
     paradigmaDocsRestoreVersion(PD13,0,0,PD14),
-    paradigmaDocsToString(PD14,X).
+    paradigmaDocsLogin(PD14, "vflores", "hola123", PD15),
+    paradigmaDocsRevokeAllAccesses(PD15,[0],PD16).
+
    
 
 test3():-canWhatinDocs(["titulo",[1,2,2020],0,"Owner","contenido",[["vflores",["R","W"]]]],"vflores","R").
@@ -553,4 +598,16 @@ test4():-
     captchaUsers(["vflores","alopez"],Users).
 test5(S):-
     addMultiplyAccesses(["Rodriguez","pedro","sebastian"],["W"],[["Rodriguez",["C","R","W"]]],S).
+test7(NewDocs):-
+    revokeAccessesAllDocsifOwner("peo",
+        [["archivo 1", [1, 12, 2021], 0, "vflores", 
+        [["hola mundo, este es elcontenido de un archivo", [1, 12, 2021], 0], 
+        ["hola mundo, este es elcontenido de un archivo este es un nuevo texto", [20, 12, 2015], 1],
+        ["hola mundo, este es elcontenido de un archivo", [1, 12, 2021], 2]]
+        , [["alopez", ["W"]], ["crios", ["W", "R"]]]],["archivo 2", [1, 12, 2021], 1, "vflores", 
+        [["hola mundo, este es elcontenido de un archivo", [1, 12, 2021], 0], 
+        ["hola mundo, este es elcontenido de un archivo este es un nuevo texto", [20, 12, 2015], 1],
+        ["hola mundo, este es elcontenido de un archivo", [1, 12, 2021], 2]]
+        , [["alopez", ["W"]], ["crios", ["W", "R"]]]], [[[[]]]]]
+    ,NewDocs).
 
