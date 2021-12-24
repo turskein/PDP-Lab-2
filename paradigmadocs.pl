@@ -1,6 +1,31 @@
 %---------------------------------------------------------------------------------
 %--------------------------Tda Fecha----------------------------------------------
 %---------------------------------------------------------------------------------
+
+/*
+======Dominios======
+Dia     : Entero   
+Mes     : Entero
+Anio    : Entero
+Date    : Fecha
+StrFecha: String
+=====Predicados=====
+date(Dia,Mes,Anio,Fecha)
+getDay(Fecha,Dia)
+getMonth(Fecha,Mes)
+getYea(Fecha,Anio)
+dateToString(Fecha,StrFecha)
+========Metas=======
+--Primarias--
+getDay
+getMonth
+getYea
+--secundarias--
+date
+dateToString
+=====Clausulas=====
+Reglas
+*/
 %de la forma: Dia(int), mes(int), anio(int)
 date(Dia,Mes,Anio,[Dia,Mes,Anio]):- Dia > 0, Dia < 32,Mes > 0 ,Mes < 13, Anio >= 1900, Anio < 2022.
 
@@ -20,12 +45,39 @@ dateToString(Date,StrOut):-
     string_concat(M,StrYear,Y),
     string_concat(D,Y,StrOut).
 
-
 %---------------------------------------------------------------------------------
 %--------------------TDA User-----------------------------------------------------
 %---------------------------------------------------------------------------------
+/*
+======Dominios======
+Username    : String
+Pass        : String
+Date        : Fecha
+StrOut      : String
+NuevoUsuario: User
+=====Predicados=====
+user(Username,Pass,Date,NuevoUsuario)
+getUsernameUser(User, Username)
+getPassUser(User, Username)
+getDateUser(User, Date)
+sameUsername(User, User)
+samePassword(User, User)
+userToString(User, StrOut)
+========Metas=======
+--Primarias
+getUsername
+getPassuser
+getDateUser
+--secundarias
+user
+userToString
+sameUsername
+samePassword
+=====Clausulas=====
+Reglas
+*/
 %de la forma: nombre(string), contrase�a(string), fecha(date),
-user(Username, Password, Date, [Username, Password, Date]).
+user(Username, Pass, Date, [Username, Pass, Date]).
 
 getUsernameUser([Username|_],Username).
 getPassUser([_,Pass|_],Pass).
@@ -60,52 +112,128 @@ userToString(User,StrOut):-
 %---------------------------------------------------------------------------------
 %-----------------TDA Docs--------------------------------------------------------
 %---------------------------------------------------------------------------------
+/*
+======Dominios======
+Doc         : Doc
+NewDoc      : Doc
+Id          : Entero
+Title       : String
+Date        : Fecha
+Versions    : Lista de versiones
+Access      : Acceso
+Accesses    : Lista de accesos
+Version     : Version
+Contenido   : String
+Permissions : lista de tipos de permiso
+OldAccesses : lista de accesos
+NewAccesses : lista de accesos
+StrOut      : string
+Letter      : string
+=====Predicados=====
+getId(Doc, Id)
+getTitle(Doc, Title)
+getCreation(Doc, Date)
+getOwnerDoc(Doc, Owner)
+getContentDoc(Doc, Versions)
+getAccessesDoc(Doc, Accesses)
+setVersionsDoc(Doc,Version,NewDoc)
+setAccessesDoc(Doc,Accesses,NewDoc)
+isOwner(Doc, Owner)
+docsCreate(Name, Date, Id, Owner, Contenido, Doc)
+restoreVersionDocs(Doc, Id, NewDoc)
+addContent(Doc, Date, Content, NewDoc)
+canWhatinDocs(Doc, Letter)
+getAccessSomeUser(Accesses, Name, AccessUser)
+addOneAccess(Accesses, Access, NewAccesses)
+addMultiplyAccesses(Accesses, Permissions, OldAccesses, NewAccesses)
+showDoc(Doc, Name, StrOut)
+showLastVersion(Versions, StrOut)
+showEveryVersion(Versions, StrOut)
+showOneAccess(Accesses, StrOut)
+showEveryAccess(Accesses, StrOut)
+showAllInformationDoc(Doc, StrOut)
+showDocForOwner(Doc, StrOut)
+showDocForInvited(Doc, Name, StrOut)
+revokeAccessesDoc(Doc, NewDoc)
+searchOnVersions(Versions,Contenido)
+searchContentOnDoc(Doc,Contenido)
+========Metas=======
+--Primarias--
+showLastVersion
+showEveryVersion
+showOneAccess
+showEveryAccess
+showAllInformationDoc
+showDocForOwner
+showDocForInvited
+addOneAccess
+getAccessSomeUser
+canWhatinDocs
+isOwner
+getId
+getTitle
+getCreation
+getOwnerDoc
+getContentDoc
+getAccessesDoc
+setVersionsDoc
+setAccessesDoc
+searchOnVersions
+--secundarias--
+searchContentOnDoc
+revokeAccessesDoc
+showDoc
+addMultiplyAccesses
+addContent
+restoreVersionDocs
+docsCreate
+=====Clausulas=====
+Reglas
+*/
 % de la forma: nombre(string), fecha creacion(date), id del
 % documento(int), lista de versiones(list), lista de accesos(access)
 
-docsCreate(Name, FechaCreacion, Id, Owner,Contenido,[Name, FechaCreacion,Id, Owner,[NewVersion],[]]):-
-    version(Contenido,FechaCreacion,0,NewVersion).
+docsCreate(Name, Date, Id, Owner, Contenido,[Name, Date,Id, Owner,[NewVersion],[]]):-
+    version(Contenido,Date,0,NewVersion).
 
 restoreVersionDocs(Doc,IdVersion,DocSalida):-
-    getContent(Doc,VersionesDoc),
+    getContentDoc(Doc,VersionesDoc),
     contarlista(VersionesDoc,0,NewID),
     nth0(IdVersion,VersionesDoc,LFVersion),
     setIdVersion(LFVersion,NewID,NewVersion),
     append(VersionesDoc,[NewVersion],NewListVersions),
-    setContent(Doc,NewListVersions,DocSalida).
+    setVersionsDoc(Doc,NewListVersions,DocSalida).
 
-addContent(DocEntrada,Fecha,NewContent,DocSalida):-
-    getContent(DocEntrada,VersionesDoc),
+addContent(DocEntrada,Date,NewContent,DocSalida):-
+    getContentDoc(DocEntrada,VersionesDoc),
     contarlista(VersionesDoc,0,LargoVersiones),
     nth1(LargoVersiones,VersionesDoc,LastVersion),
     getContenidoVrsn(LastVersion,ContenidoLastVersion),
     string_concat(ContenidoLastVersion,NewContent,NewContentofVrsn),
-    version(NewContentofVrsn,Fecha,LargoVersiones,NewVersion),
+    version(NewContentofVrsn,Date,LargoVersiones,NewVersion),
     append(VersionesDoc,[NewVersion],NewVersions),
-    setContent(DocEntrada,NewVersions,DocSalida).
+    setVersionsDoc(DocEntrada,NewVersions,DocSalida).
 
 getId([_,_,Id|_],Id).
 getTitle([Title|_],Title).
 getCreation([_,Creation|_],Creation).
-getOwner([_,_,_,Owner|_],Owner).
-getContent([_,_,_,_,Content,_|_],Content).
-getAccesses([_,_,_,_,_,Accesses], Accesses).
+getOwnerDoc([_,_,_,Owner|_],Owner).
+getContentDoc([_,_,_,_,Content,_|_],Content).
+getAccessesDoc([_,_,_,_,_,Accesses], Accesses).
 
-setContent([Name, FechaCreacion,Id, Owner,_,Accesses|_],NewContents,[Name, FechaCreacion,Id, Owner,NewContents,Accesses]).
-
-setAccesses([Name, FechaCreacion,Id, Owner,Content,_|_],NewAccesses,[Name, FechaCreacion,Id, Owner,Content,NewAccesses]).
-
+setVersionsDoc([Name, Date,Id, Owner,_,Accesses|_],NewVersions,[Name, Date,Id, Owner,NewVersions,Accesses]).
+setAccessesDoc([Name, Date,Id, Owner,Versions,_|_],NewAccesses,[Name, Date,Id, Owner,Versions,NewAccesses]).
 isOwner([_,_,_,Owner|_],Owner).
 
 canWhatinDocs([_,_,_,Owner|_],Owner,_):-!,true.
-canWhatinDocs([_,_,_,_,_,LA|_],Name,Letter):-
-    getAccessSomeUser(LA,Name,SAC),
-    getListAccessUser(SAC,LAU),
-    canWhat(LAU,Letter).
+canWhatinDocs([_,_,_,_,_,ListAccesses|_],Name,Letter):-
+    getAccessSomeUser(ListAccesses,Name,SomeAccess),
+    getListAccessUser(SomeAccess,ListAccessUser),
+    canWhat(ListAccessUser,Letter).
 
 %lista de accesos(list from docs), Name(string)
-getAccessSomeUser([FAU|_],Name,FAU):- getNameAccess(FAU,Name),!.
-getAccessSomeUser([_|LAU],Name,AFU):- getAccessSomeUser(LAU,Name,AFU).
+getAccessSomeUser([FirstAccess|_],Name,FirstAccess):- getNameAccess(FirstAccess,Name),!.
+getAccessSomeUser([_|NextAccesses],Name,AccessUser):- getAccessSomeUser(NextAccesses,Name,AccessUser).
 
 % dominio: lista de accesos del doc(list accessess from doc), acceso a
 % agregar (access)
@@ -181,10 +309,10 @@ showAllInformationDoc(Documento,StrOut):-
     getTitle(Documento,Title),%=============Title
     getCreation(Documento,DateCreation),
     dateToString(DateCreation,StrDate),%=============StrDate
-    getContent(Documento,Versions),
+    getContentDoc(Documento,Versions),
     showEveryVersion(Versions,StrVersions),%=============StrVersions
-    getAccesses(Documento, Accesses),
-    getOwner(Documento,Owner),
+    getAccessesDoc(Documento, Accesses),
+    getOwnerDoc(Documento,Owner),
     string_concat("Creador: ",Owner,StrOwner),
     string_concat(StrOwner,"\n",StrOwnerW),
     showEveryAccess(Accesses,StrAccess), %=============StrAccess
@@ -207,9 +335,9 @@ showDocForOwner(Documento,StrOut):-
     getTitle(Documento,Title),%=============Title
     getCreation(Documento,DateCreation),
     dateToString(DateCreation,StrDate),%=============StrDate
-    getContent(Documento,Versions),
+    getContentDoc(Documento,Versions),
     showEveryVersion(Versions,StrVersions),%=============StrVersions
-    getAccesses(Documento, Accesses),
+    getAccessesDoc(Documento, Accesses),
     string_concat("Creador: Propio","\n",StrOwnerW),
     showEveryAccess(Accesses,StrAccess), %=============StrAccess
     string_concat("======",Title,Half),
@@ -227,8 +355,8 @@ showDocForOwner(Documento,StrOut):-
 
 showDocForInvited(Documento, User, StrOut):-
     getTitle(Documento,Title),
-    getAccesses(Documento, Accesses),
-    getContent(Documento,ContenidoDoc),
+    getAccessesDoc(Documento, Accesses),
+    getContentDoc(Documento,ContenidoDoc),
     showOneAccess(Accesses, User, TheAccess),
     showLastVersion(ContenidoDoc, LastVersion),
     string_concat("======",Title,Half),
@@ -242,13 +370,49 @@ showDocForInvited(Documento, User, StrOut):-
     string_concat(C,"\n",StrOut).
     
 revokeAccessesDoc(Documento, NewDocument):-
-    setAccesses(Documento,[],NewDocument).
+    setAccessesDoc(Documento,[],NewDocument).
 
+searchContentOnDoc(Doc,ContentLF):-
+    getContentDoc(Doc,Versions),
+    searchOnVersions(Versions,ContentLF).
 
+searchOnVersions([FirsVersion|_],ContentLF):-
+    existContentinVersion(FirsVersion,ContentLF),!.
+searchOnVersions([_,NextVersions],ContentLF):-
+    searchOnVersions(NextVersions,ContentLF).
 %---------------------------------------------------------------------------------
 %-----------TDA Version-----------------------------------------------------------
 %---------------------------------------------------------------------------------
-
+/*
+======Dominios======
+Contenido   : String
+Date        : Fecha
+Id          : Entero
+NewId       : Entero
+Version     : Version
+NewVersion  : Version
+StrOut      : String
+=====Predicados=====
+version(Contenido, Date, Id, Version)
+getContenidoVrsn(Version, Contenido)
+getDateVrsn(Version, Date)
+getIdVrsn(Version, Id)
+setIdVersion(Version,NewId, NewVersion)
+versionToString(Version, StrOut)
+existContentinVersion(Version,Contenido)
+========Metas=======
+--Primarias--
+getContenidoVrsn
+getDateVrsn
+getIdVrsn
+--secundarias--
+existContentinVersion
+version
+setIdVersion
+versionToString
+=====Clausulas=====
+Reglas
+*/
 %de la forma: contenido("string"), fecha de creación(date), id versión (int), Salida
 version(Contenido,Date,Id,[Contenido,Date,Id]).
 
@@ -273,25 +437,62 @@ versionToString(Version,StrOut):-
     string_concat(B,G,M),
     string_concat(M,J,StrOut).
 
+existContentinVersion(Version,ContentLF):-
+    getContenidoVrsn(Version,Contenido),
+    existSubStr(Contenido,ContentLF).
 
+existSubStr(BigWord,LfWord):-
+    string_length(LfWord,Largo),
+    searchword(BigWord,LfWord,1,Largo).
 
-
+searchword(BigWord,LfWord,FirstNumber,FinalNumber):-
+    substring(BigWord,FirstNumber,FinalNumber,LfWord),!.
+searchword(BigWord,LfWord,FirstNumber,FinalNumber):-
+    string_length(BigWord,Largo),
+    substring(BigWord,2,Largo,NewBigWord),
+    searchword(NewBigWord,LfWord,FirstNumber,FinalNumber).
 
 %---------------------------------------------------------------------------------
 %-----------TDA Access------------------------------------------------------------
 %---------------------------------------------------------------------------------
-
+/*
+======Dominios======
+Name        : String
+Access      : Access
+ListKindAccess: lista de tipos de permisos
+Letter      : String
+ListAccess  : Lista de accesos
+StrOut      : String
+=====Predicados=====
+access(Name,ListKindAccess,Access)
+getNameAccess(Access, Name)
+getListAccessUser(Access, ListKindAccess)
+canWhat(ListKindAccess, Letter)
+listAccessToString(ListAccess,StrOut)
+accessToString(Access, StrOut)
+========Metas=======
+--Primarias--
+getNameAccess
+getListAccessUser
+--secundarias--
+access
+canWhat
+listAccessToString
+accessToString
+=====Clausulas=====
+Reglas
+*/
 % de la forma: nombre usuario(string), lista de accesos del user(list)
-access(Name,LA,[Name,LA]).
+access(Name,ListKindAccess,[Name,ListKindAccess]).
 
 getNameAccess([Name|_],Name).
-getListAccessUser([_,LA|_],LA).
+getListAccessUser([_,ListKindAccess|_],ListKindAccess).
 
 % lista de accesos del user(list from access), tipo de acceso a
 % buscar(CHAR)
 canWhat([],_):- !,fail.
-canWhat([FA|_],FA):- !, true.
-canWhat([_|LAU],Letter):-canWhat(LAU,Letter).
+canWhat([FirstAccess|_],FirstAccess):- !, true.
+canWhat([_|NextKindAccess],Letter):-canWhat(NextKindAccess,Letter).
 
 % descripción: muestra los tipos de accesos que presenta una lista de 
 % accesos perteneciente a un acceso en particular
@@ -312,19 +513,73 @@ accessToString(Access,StrOut):-
     string_concat(A,"\n",B),
     string_concat(K,B,StrOut).
 
-
-
-
-
-
-
 /*---------------------------------------------------------------------------------
 ------------Tda Paradigmadocs----------------------------------------------------
 ---------------------------------------------------------------------------------
- de la forma: nombre de la plataforma(string), fecha de creacion(date),
- usuario activo(string), usuarios registrados(list), documentos(list).*/
+ */
+ /*
+======Dominios======
+Prdc        : Paradigmadocs
+NewPrdc     : Paradigmadocs
+Users       : Lista de usuarios
+Docs        : Lista de documentos
+NewDocs     : Lista de documentos
+Name        : String
+Date        : Fecha
+Log         : String
+Usernames   : Lista de nombre de usuarios
+ListId's    : lista de id's de documentos
+StrOut      : String
 
-paradigmaDocs(Name, Date, [Name, Date, "", [],[]]).
+=====Predicados=====
+setUsersPrdc(Prdc,Users,NewPrdc)
+setLogPrdc(Prdc,Log,NewPrdc)
+setDocsPrdc(Prdc,Docs,NewPrdc)
+getNamePrdc(Prdc,Name)
+getDatePrdc(Prdc,Date)
+getUsersPrdc(Prdc,Users)
+getLogPrdc(Prdo,Log)
+getDocsPrdc(Prdc,Docs)
+existlog(Prdc)
+closelog(Prdc,NewPrdc)
+existUsername(Users,User)
+existUser(Users,User)
+getSomeDoc(Docs, Id, Doc)
+setSomeDoc(Docs,Id,Doc,NewDocs)
+captchaUsers(Users,Usernames)
+showEveryDoc(Docs,StrOut)
+showEveryUser(Users,StrOut)
+revokeAccessesifOwner(Docs, Name, Id, NewDocs)
+revokemultiplyAccesesifOwner(ListId's, Name, Docs, NewDocs)
+revokeAccessesAllDocsifOwner(Name, OldDocs, NewDocs)
+========Metas=======
+--Primarias--
+revokeAccessesifOwner
+existUsername
+--secundarias--
+setUsersPrdc
+setLogPrdc
+setDocsPrdc
+getNamePrdc
+getDatePrdc
+getUsersPrdc
+getLogPrdc
+getDocsPrdc
+existlog
+closelog
+existUser
+getSomeDoc
+setSomeDoc
+captchaUsers
+showEveryDoc
+showEveryUser
+revokemultiplyAccesesifOwner
+revokeAccessesAllDocsifOwner
+=====Clausulas=====
+Reglas
+*/
+%de la forma: nombre de la plataforma(string), fecha de creacion(date),
+%usuario activo(string), usuarios registrados(list), documentos(list).
 
 setUsersPrdc([Name,Date,Log,_,Docs|_],NewUsers,[Name,Date,Log,NewUsers,Docs]).
 setLogPrdc([Name,Date,_,Users,Docs|_],NewLog,[Name,Date,NewLog,Users,Docs]).
@@ -374,13 +629,11 @@ showEveryDoc([FirstDoc|NextDocs],User,StrOut):-
     string_concat(StrFirstDoc,OutNextDocs,StrOut).
 
 showEveryUser([],_,"").
-
 showEveryUser([FirstUser|NextUsers],"",StrOut):-
     showEveryUser(NextUsers,"",OutNextUsers),
     string_concat(OutNextUsers,"\n",W),
     userToString(FirstUser,StrUser),
     string_concat(W,StrUser,StrOut).
-
 showEveryUser([FirstUser|_],Username,StrOut):-
     getUsernameUser(FirstUser,Username),
     userToString(FirstUser,StrOut).
@@ -409,54 +662,53 @@ revokeAccessesAllDocsifOwner(User,[FirstDoc|NextDocs],[NewDoc|BeforeNextDocs]):-
 revokeAccessesAllDocsifOwner(User,[FirstDoc|NextDocs],[FirstDoc|BeforeNextDocs]):-
     revokeAccessesAllDocsifOwner(User, NextDocs, BeforeNextDocs).
 
-
-
-
-
-
-
-
-
-
-
+searchContentOnDocs([],_,_,[]).
+searchContentOnDocs([FirstDoc|NextDocs],User,Contenido,[FirstDoc|DocsEncontrados]):-
+    canWhatinDocs(FirstDoc,User,"R"),
+    searchContentOnDoc(FirstDoc,Contenido),
+    searchContentOnDocs(NextDocs,User,Contenido,DocsEncontrados),!.
+searchContentOnDocs([_|NextDocs],User,Contenido,DocsEncontrados):-
+    searchContentOnDocs(NextDocs,User,Contenido,DocsEncontrados).
+    
 
 %---------------------------------------------------------------------------------
 %------------------------------------requerimientos-------------------------------
 %---------------------------------------------------------------------------------
+paradigmaDocs(Name, Date, [Name, Date, "", [],[]]).
 
 paradigmaDocsRegister(Sn1, Fecha, Username, Password, Sn2):-
-    user(Username,Password, Fecha, US),
-    getUsersPrdc(Sn1,LU),
-    not(existUsername(LU,US)),
-    setUsersPrdc(Sn1,[US|LU],Sn2).
+    user(Username,Password, Fecha, User),
+    getUsersPrdc(Sn1,ListUsers),
+    not(existUsername(ListUsers,User)),
+    setUsersPrdc(Sn1,[User|ListUsers],Sn2).
 
 paradigmaDocsLogin(Sn1, Username, Password, Sn2):-
-    user(Username,Password, [1,2,2020], US),
-    getUsersPrdc(Sn1,LU),
-    existUser(LU,US),
+    user(Username,Password, [1,2,2020], User),
+    getUsersPrdc(Sn1,ListUsers),
+    existUser(ListUsers,User),
     setLogPrdc(Sn1,Username,Sn2).
 
 paradigmaDocsCreate(Sn1, Fecha, Nombre, Contenido, Sn2):-
     existlog(Sn1),
-    getDocsPrdc(Sn1,LD),
-    contarlista(LD,0,Largo),
-    getLogPrdc(Sn1,Owner),
-    docsCreate(Nombre,Fecha,Largo,Owner,Contenido,D0),
-    setDocsPrdc(Sn1,[D0|LD],Sn),
+    getDocsPrdc(Sn1,ListDocs),
+    contarlista(ListDocs,0,Largo),
+    getLogPrdc(Sn1,Logged),
+    docsCreate(Nombre,Fecha,Largo,Logged,Contenido,Doc0),
+    setDocsPrdc(Sn1,[Doc0|ListDocs],Sn),
     closelog(Sn,Sn2).
 
 paradigmaDocsShare(Sn1,DocumentId,ListaPermisos,ListaUsernamesPermitidos,Sn2):-
     existlog(Sn1),
     getLogPrdc(Sn1,Logged),
     getDocsPrdc(Sn1,ListDocs),
-    getSomeDoc(ListDocs,DocumentId,D0),
-    isOwner(D0,Logged),
+    getSomeDoc(ListDocs,DocumentId,Doc0),
+    isOwner(Doc0,Logged),
     getUsersPrdc(Sn1,ListUsers),
     captchaUsers(ListaUsernamesPermitidos,ListUsers),
-    getAccesses(D0,Accesses),
+    getAccessesDoc(Doc0,Accesses),
     addMultiplyAccesses(ListaUsernamesPermitidos,ListaPermisos,Accesses,NewAccesses),
-    setAccesses(D0,NewAccesses,D1),
-    setSomeDoc(ListDocs,DocumentId,D1,NewListDocs),
+    setAccessesDoc(Doc0,NewAccesses,NewDoc),
+    setSomeDoc(ListDocs,DocumentId,NewDoc,NewListDocs),
     setDocsPrdc(Sn1,NewListDocs,Sn),
     closelog(Sn,Sn2).
 
@@ -531,6 +783,12 @@ paradigmaDocsRevokeAllAccesses(Sn1, [], Sn2):-
     setDocsPrdc(Sn1,NewListDocs,Sn),
     closelog(Sn,Sn2).
 
+paradigmaDocsSearch(Sn1, SearchText, Documents):-
+    existlog(Sn1),
+    getLogPrdc(Sn1, Logged),
+    getDocsPrdc(Sn1, ListDocs),
+    searchContentOnDocs(ListDocs,Logged, SearchText,Documents).
+
 
 
 
@@ -568,7 +826,7 @@ test2(Usuario,StrOut):-
     getDocsPrdc(PD14,Docs),
     showEveryDoc(Docs,Usuario,StrOut).
 
-test6(PD16):-
+test6(Documents):-
     date(20, 12, 2015, D1),
     date(1, 12, 2021, D2), date(3,12, 2021, D3), 
     paradigmaDocs("google docs", D1, PD1),
@@ -586,7 +844,9 @@ test6(PD16):-
     paradigmaDocsLogin(PD12, "vflores", "hola123", PD13),
     paradigmaDocsRestoreVersion(PD13,0,0,PD14),
     paradigmaDocsLogin(PD14, "vflores", "hola123", PD15),
-    paradigmaDocsRevokeAllAccesses(PD15,[0],PD16).
+    paradigmaDocsRevokeAllAccesses(PD15,[0],PD16),
+    paradigmaDocsLogin(PD16, "vflores", "hola123", PD17),
+    paradigmaDocsSearch(PD17, "hola", Documents).
 
    
 
