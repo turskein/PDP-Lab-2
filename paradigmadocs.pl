@@ -129,6 +129,9 @@ OldAccesses : lista de accesos
 NewAccesses : lista de accesos
 StrOut      : string
 Letter      : string
+NumberOfCharacters : Integer
+SearchText  : string
+ReplaceText : string
 =====Predicados=====
 getId(Doc, Id)
 getTitle(Doc, Title)
@@ -157,6 +160,8 @@ showDocForInvited(Doc, Name, StrOut)
 revokeAccessesDoc(Doc, NewDoc)
 searchOnVersions(Versions,Contenido)
 searchContentOnDoc(Doc,Contenido)
+deleteOnDocs(Doc, Date, NumberOfCharacters, NewDoc)
+searchAndReplaceOnDocs(Doc, SearchText, ReplaceText, NewDoc)
 ========Metas=======
 --Primarias--
 showLastVersion
@@ -180,6 +185,8 @@ setVersionsDoc
 setAccessesDoc
 searchOnVersions
 --secundarias--
+deleteOnDocs
+searchAndReplaceOnDocs
 searchContentOnDoc
 revokeAccessesDoc
 showDoc
@@ -309,6 +316,10 @@ showAllInformationDoc(Documento,StrOut):-
     getTitle(Documento,Title),%=============Title
     getCreation(Documento,DateCreation),
     dateToString(DateCreation,StrDate),%=============StrDate
+    getId(Documento, Id),
+    number_string(Id, StrId),
+    string_concat("Id: ",StrId, BId),
+    string_concat(BId,"\n",BLockId),
     getContentDoc(Documento,Versions),
     showEveryVersion(Versions,StrVersions),%=============StrVersions
     getAccessesDoc(Documento, Accesses),
@@ -325,7 +336,8 @@ showAllInformationDoc(Documento,StrOut):-
     string_concat("---Accesses---",StrAccess,BlockAccesses),
     string_concat(TheTitleW,TheDateW,A),
     string_concat(A,StrOwnerW,N),
-    string_concat(N,BlockVersions,B),
+    string_concat(N,BLockId,K),
+    string_concat(K,BlockVersions,B),
     string_concat(B,BlockAccesses,C),
     string_concat(C,"\n",StrOut).
 
@@ -380,6 +392,43 @@ searchOnVersions([FirsVersion|_],ContentLF):-
     existContentinVersion(FirsVersion,ContentLF),!.
 searchOnVersions([_,NextVersions],ContentLF):-
     searchOnVersions(NextVersions,ContentLF).
+
+deleteOnDocs(Doc, Date, NumberOfCharacters, NewDoc):-
+    getContentDoc(Doc, Versions),
+    contarlista(Versions, 0, Largo),
+    nth1(Largo, Versions, TheVersion),
+    getContenidoVrsn(TheVersion, ContenidoVersion),
+    string_length(ContenidoVersion, LargoContenido),
+    NumberOfCharacters < LargoContenido,
+    NewLargoContenido is LargoContenido - NumberOfCharacters,
+    substring(ContenidoVersion, 1, NewLargoContenido, NuevoContenidoVersion),
+    version(NuevoContenidoVersion, Date, Largo, NewVersion),
+    append(Versions, [NewVersion], NewVersions),
+    setVersionsDoc(Doc, NewVersions, NewDoc),!.
+deleteOnDocs(Doc, Date, NumberOfCharacters, NewDoc):-
+    getContentDoc(Doc, Versions),
+    contarlista(Versions, 0, Largo),
+    nth1(Largo, Versions, TheVersion),
+    getContenidoVrsn(TheVersion, ContenidoVersion),
+    string_length(ContenidoVersion, LargoContenido),
+    NumberOfCharacters >= LargoContenido,
+    version("", Date, Largo, NewVersion),
+    append(Versions, [NewVersion], NewVersions),
+    setVersionsDoc(Doc, NewVersions, NewDoc).
+
+searchAndReplaceOnDocs(Doc, SearchText, ReplaceText, NewDoc):-
+    getContentDoc(Doc, Versions),
+    contarlista(Versions, 0, Largo),
+    nth1(Largo, Versions, TheVersion),
+    existContentinVersion(TheVersion, SearchText),
+    getContenidoVrsn(TheVersion, ContenidoVersion),
+    re_replace(SearchText, ReplaceText, ContenidoVersion, NewContenido),
+    getDateVrsn(TheVersion, Date),
+    version(NewContenido, Date, Largo, NewVersion),
+    append(Versions, [NewVersion], NewVersions),
+    setVersionsDoc(Doc, NewVersions, NewDoc),!.
+searchAndReplaceOnDocs(Doc,_, _, Doc).
+
 %---------------------------------------------------------------------------------
 %-----------TDA Version-----------------------------------------------------------
 %---------------------------------------------------------------------------------
@@ -789,10 +838,27 @@ paradigmaDocsSearch(Sn1, SearchText, Documents):-
     getDocsPrdc(Sn1, ListDocs),
     searchContentOnDocs(ListDocs,Logged, SearchText,Documents).
 
+paradigmaDocsDelete(Sn1, DocumentId, Date, NumberOfCharacters, Sn2):-
+    existlog(Sn1),
+    getLogPrdc(Sn1, Logged),
+    getDocsPrdc(Sn1, Docs),
+    getSomeDoc(Docs,DocumentId,TheDoc),
+    canWhatinDocs(TheDoc, Logged, "W"),
+    deleteOnDocs(TheDoc, Date, NumberOfCharacters, NewDoc),
+    setSomeDoc(Docs, DocumentId, NewDoc, NewDocs),
+    setDocsPrdc(Sn1,NewDocs, Sn),
+    closelog(Sn, Sn2).
 
-
-
-
+paradigmaDocsSearchAndReplace(Sn1, DocumentId,  SearchText, ReplaceText, Sn2):-
+    existlog(Sn1),
+    getLogPrdc(Sn1, Logged),
+    getDocsPrdc(Sn1, Docs),
+    getSomeDoc(Docs,DocumentId,TheDoc),
+    canWhatinDocs(TheDoc, Logged, "W"),
+    searchAndReplaceOnDocs(TheDoc, SearchText, ReplaceText, NewDoc),
+    setSomeDoc(Docs, DocumentId, NewDoc, NewDocs),
+    setDocsPrdc(Sn1,NewDocs, Sn),
+    closelog(Sn, Sn2).
 
 %---------------------------------------------------------------------------------
 %-----------------------------------testeos---------------------------------------
@@ -826,7 +892,7 @@ test2(Usuario,StrOut):-
     getDocsPrdc(PD14,Docs),
     showEveryDoc(Docs,Usuario,StrOut).
 
-test6(Documents):-
+test6(StrOut):-
     date(20, 12, 2015, D1),
     date(1, 12, 2021, D2), date(3,12, 2021, D3), 
     paradigmaDocs("google docs", D1, PD1),
@@ -846,7 +912,10 @@ test6(Documents):-
     paradigmaDocsLogin(PD14, "vflores", "hola123", PD15),
     paradigmaDocsRevokeAllAccesses(PD15,[0],PD16),
     paradigmaDocsLogin(PD16, "vflores", "hola123", PD17),
-    paradigmaDocsSearch(PD17, "hola", Documents).
+    paradigmaDocsDelete(PD17, 0, [1,3,2020], 10, PD18),
+    paradigmaDocsLogin(PD18, "vflores", "hola123", PD19),
+    paradigmaDocsSearchAndReplace(PD19, 0, "hola","cepillin",PD20),
+    paradigmaDocsToString(PD20, StrOut).
 
    
 
