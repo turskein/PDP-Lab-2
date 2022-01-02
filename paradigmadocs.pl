@@ -1,4 +1,79 @@
 %---------------------------------------------------------------------------------
+%--------------------------Funciones Generales------------------------------------
+%---------------------------------------------------------------------------------
+/*
+======Dominios======
+BigWord     : String
+LfWord      : String
+FirstNumber : Entero
+FinalNumber : Entero
+Lista       : lista
+NewLista    : lista
+Count       : Entero
+Total       : Entero
+Number      : Entero
+Componente  : varios
+=====Predicados=====
+existSubStr(BigWord,Lfword)
+searchWord(BigWord, LfWord, FirstNumber, FinalNumber)
+contarlista(Lista, FirstNumber, Total)
+append(Lista, Componente, NewLista)
+nth0(Number, Lista, Componente)
+nth1(Number, Lista, Componente)
+========Metas=======
+--Primarias
+searchWord
+--secundarias
+existSubStr
+contarlista
+append
+nth0
+nth1
+=====Clausulas=====
+Reglas
+*/
+%descripcion: busca dentro de uns string la existencia de otro string
+existSubStr(BigWord,LfWord):-
+    string_length(LfWord,Largo),
+    searchword(BigWord,LfWord,1,Largo).
+
+%descripcion: busca dentro de un string la existencia de otro string tras ingresar ciertos parametros
+searchword(BigWord,LfWord,FirstNumber,FinalNumber):-
+    substring(BigWord,FirstNumber,FinalNumber,LfWord),!.
+searchword(BigWord,LfWord,FirstNumber,FinalNumber):-
+    string_length(BigWord,Largo),
+    substring(BigWord,2,Largo,NewBigWord),
+    searchword(NewBigWord,LfWord,FirstNumber,FinalNumber).
+
+%descripcion: cuenta la cantidad de elementos de una lista tras ingresar lista, 0, N; siendo N
+%el largo de la lista
+contarlista([],FirstNumber,FirstNumber).
+contarlista([_|L],FirstNumber,Total):- Newcount is FirstNumber+1, contarlista(L,Newcount,Total).
+
+
+/*
+Fundamentos para poder ocupar estas funciones
+%descripcion: agrega al final de una lista un componente
+append([],Componente,[Componente]).
+append([FirstComp|Next], Componente, [FirstComp|BeforeLista]):-
+    append(Next,Componente,BeforeLista).
+
+%descripcion: retorna un componente en particualr senialando su posicion contando desde 0
+nth0(Number, [Componente|_], Componente):-
+    Number = 0,!.
+nth0(Number, [_|Next], Componente):-
+    NewNumber is Number - 1,
+    nth0(NewNumber, Next, Componente).
+
+%descripcion: retorna un componente en particualr senialando su posicion contando desde 1
+nth1(Number, [Componente|_], Componente):-
+    Number = 1,!.
+nth1(Number, [_|Next], Componente):-
+    NewNumber is Number - 1,
+    nth0(NewNumber, Next, Componente).
+*/
+
+%---------------------------------------------------------------------------------
 %--------------------------Tda Fecha----------------------------------------------
 %---------------------------------------------------------------------------------
 
@@ -13,13 +88,13 @@ StrFecha: String
 date(Dia,Mes,Anio,Fecha)
 getDay(Fecha,Dia)
 getMonth(Fecha,Mes)
-getYea(Fecha,Anio)
+getYear(Fecha,Anio)
 dateToString(Fecha,StrFecha)
 ========Metas=======
 --Primarias--
 getDay
 getMonth
-getYea
+getYear
 --secundarias--
 date
 dateToString
@@ -27,18 +102,23 @@ dateToString
 Reglas
 */
 %de la forma: Dia(int), mes(int), anio(int)
+%descripcion: genera una fecha al ingresar 3 valores distintos, siendo la cuarta entrada la fecha
 date(Dia,Mes,Anio,[Dia,Mes,Anio]):- Dia > 0, Dia < 32,Mes > 0 ,Mes < 13, Anio >= 1900, Anio < 2022.
 
+%descripcion: al ingresar un fecha devuelve el dia correspondiente a tal fecha
 getDay([Dia|_], SDay):- Dia= SDay.
+%descripcion: al ingresar un fecha devuelve el mes correspondiente a tal fecha
 getMonth([_,Mes|_], SMonth):- Mes = SMonth.
-getYea([_,_,Anio|_], SYear):- Anio = SYear.
+%descripcion: al ingresar un fecha devuelve el anio correspondiente a tal fecha
+getYear([_,_,Anio|_], SYear):- Anio = SYear.
 
+%descripcion: tras ingresar un fecha retorna un string de formato "dia-mes-agnio"
 dateToString(Date,StrOut):-
     getDay(Date,Day),
     number_string(Day,StrDay),
     getMonth(Date,Month),
     number_string(Month,StrMonth),
-    getYea(Date,Year),
+    getYear(Date,Year),
     number_string(Year,StrYear),
     string_concat(StrDay,"-",D),
     string_concat(StrMonth,"-",M),
@@ -77,16 +157,21 @@ samePassword
 Reglas
 */
 %de la forma: nombre(string), contrase�a(string), fecha(date),
+%descripcion: retorna un user tras ingresar cada uno de sus componentes
 user(Username, Pass, Date, [Username, Pass, Date]).
 
+%descripcion: retorna el nombre de usuario del user
 getUsernameUser([Username|_],Username).
+%descripcion: retorna la contrasenia del user
 getPassUser([_,Pass|_],Pass).
+%descripcion: retorna la fecha de creacion de user
 getDateUser([_,_,Date],Date).
 
+%descripcion: verifica la igualdad entre dos nombre de usuarios
 sameUsername([Username1|_],[Username1|_]).
-
+%descripcion: verifica la igualdad entre dos contrasenias
 samePassword([_,Pass1|_],[_,Pass1|_]).
-
+%descripcion: transforma un user a string
 userToString(User,StrOut):-
     getUsernameUser(User, Username),
     getPassUser(User, Pass),
@@ -100,14 +185,6 @@ userToString(User,StrOut):-
     string_concat(LineDate,"\n", LineDateW),
     string_concat(LineUserW,LinePassW,A),
     string_concat(A,LineDateW,StrOut).
-
-
-
-
-
-
-
-
 
 %---------------------------------------------------------------------------------
 %-----------------TDA Docs--------------------------------------------------------
@@ -199,10 +276,30 @@ Reglas
 */
 % de la forma: nombre(string), fecha creacion(date), id del
 % documento(int), lista de versiones(list), lista de accesos(access)
-
+%descripcion: genera un doc tras ingresar cada uno de sus componentes
 docsCreate(Name, Date, Id, Owner, Contenido,[Name, Date,Id, Owner,[NewVersion],[]]):-
     version(Contenido,Date,0,NewVersion).
+%descripcion: retorna el id del documento
+getId([_,_,Id|_],Id).
+%descripcion: retorna el titulo del documento
+getTitle([Title|_],Title).
+%descripcion: retorna la fecha de creacion del documento
+getCreation([_,Creation|_],Creation).
+%descripcion: retorna el nombre del propietario del documento
+getOwnerDoc([_,_,_,Owner|_],Owner).
+%descripcion: retorna las versiones del documento
+getContentDoc([_,_,_,_,Content,_|_],Content).
+%descripcion: retorna la lista de accesos al documento del documento
+getAccessesDoc([_,_,_,_,_,Accesses], Accesses).
 
+%descripcion: retorna un documento con la lista de versiones actualizada
+setVersionsDoc([Name, Date,Id, Owner,_,Accesses|_],NewVersions,[Name, Date,Id, Owner,NewVersions,Accesses]).
+%descripcion: retorna un documento con la lista de accesos actualizada
+setAccessesDoc([Name, Date,Id, Owner,Versions,_|_],NewAccesses,[Name, Date,Id, Owner,Versions,NewAccesses]).
+%descripcion: verifica si el propietario coincide con un nombre de usuario ingresado
+isOwner([_,_,_,Owner|_],Owner).
+
+%descripcion: retorna un documento con una versión senialda llevada a la versión actual
 restoreVersionDocs(Doc,IdVersion,DocSalida):-
     getContentDoc(Doc,VersionesDoc),
     contarlista(VersionesDoc,0,NewID),
@@ -211,6 +308,7 @@ restoreVersionDocs(Doc,IdVersion,DocSalida):-
     append(VersionesDoc,[NewVersion],NewListVersions),
     setVersionsDoc(Doc,NewListVersions,DocSalida).
 
+%descripcion: agrega contenido a la ultima version del documento generando una nueva version
 addContent(DocEntrada,Date,NewContent,DocSalida):-
     getContentDoc(DocEntrada,VersionesDoc),
     contarlista(VersionesDoc,0,LargoVersiones),
@@ -221,29 +319,18 @@ addContent(DocEntrada,Date,NewContent,DocSalida):-
     append(VersionesDoc,[NewVersion],NewVersions),
     setVersionsDoc(DocEntrada,NewVersions,DocSalida).
 
-getId([_,_,Id|_],Id).
-getTitle([Title|_],Title).
-getCreation([_,Creation|_],Creation).
-getOwnerDoc([_,_,_,Owner|_],Owner).
-getContentDoc([_,_,_,_,Content,_|_],Content).
-getAccessesDoc([_,_,_,_,_,Accesses], Accesses).
-
-setVersionsDoc([Name, Date,Id, Owner,_,Accesses|_],NewVersions,[Name, Date,Id, Owner,NewVersions,Accesses]).
-setAccessesDoc([Name, Date,Id, Owner,Versions,_|_],NewAccesses,[Name, Date,Id, Owner,Versions,NewAccesses]).
-isOwner([_,_,_,Owner|_],Owner).
-
+%descripcion: verifica que permiso en particular tiene un usuario senialado
 canWhatinDocs([_,_,_,Owner|_],Owner,_):-!,true.
 canWhatinDocs([_,_,_,_,_,ListAccesses|_],Name,Letter):-
     getAccessSomeUser(ListAccesses,Name,SomeAccess),
     getListAccessUser(SomeAccess,ListAccessUser),
     canWhat(ListAccessUser,Letter).
 
-%lista de accesos(list from docs), Name(string)
+%descripcion: retorna el acceso que tiene un usuario senialado
 getAccessSomeUser([FirstAccess|_],Name,FirstAccess):- getNameAccess(FirstAccess,Name),!.
 getAccessSomeUser([_|NextAccesses],Name,AccessUser):- getAccessSomeUser(NextAccesses,Name,AccessUser).
 
-% dominio: lista de accesos del doc(list accessess from doc), acceso a
-% agregar (access)
+%descripcion: retorna el acceso de un usuario en particular actualizada por el ingresado
 addOneAccess([],Access,[Access]).
 addOneAccess([LastAccess|NextAccesses],Access,[Access|NextAccesses]):-
     getNameAccess(LastAccess,Name1),
@@ -251,17 +338,15 @@ addOneAccess([LastAccess|NextAccesses],Access,[Access|NextAccesses]):-
 addOneAccess([LastAccess|NextAccess],Access,[LastAccess|Accesses]):-
     addOneAccess(NextAccess,Access,Accesses).
 
-% dominio: lista nombres usuarios(list usernames), lista permisos(list),
-% lista de accesos del documento(list access from doc)
+%descripcion: retorna una lista de accesos actualizada de todos los accesos ingresados
 addMultiplyAccesses([],_,OldAccesses,OldAccesses):-!.
 addMultiplyAccesses([LastUsername|NextUsernames],Permissions,OldAccesses,NewAccesses):-
     addMultiplyAccesses(NextUsernames,Permissions,OldAccesses,NextNew),
     access(LastUsername,Permissions,A),
     addOneAccess(NextNew,A,NewAccesses).
 
-%descripción: validará StrOut como la muestra del documento señalado,
+%descripcion: validará StrOut como la muestra del documento senialado,
 % de acuerdo al tipo de permiso que tiene el usuario
-%dominio: doc(documento a decidir cómo mostrar), nombre de usuario(string), string de salida
 showDoc(Documento, User, StrOut):-
     isOwner(Documento,User),
     showDocForOwner(Documento,StrOut),
@@ -274,16 +359,14 @@ showDoc(Documento,"",StrOut):-
     showAllInformationDoc(Documento,StrOut).
 showDoc(_,_,"").
 
-%descripción: retorna el contenido de la última versión del doc
-%dominio: lista de versiones(list versions from docs), str
+%descripcion: retorna el contenido de la última versión del doc como string
 showLastVersion(ListVersions,StrOut):-
     contarlista(ListVersions,0,Largo),
     nth1(Largo,ListVersions,TheLastVersion),
     versionToString(TheLastVersion,StrVersion),
     string_concat(StrVersion,"\n",StrOut).
 
-%descripción: retorna el contenido de todas las versiones de una lista de versiones
-%dominio: lista de versiones(list versions from docs), str
+%descripcion: retorna el contenido de todas las versiones de una lista de versiones como string
 showEveryVersion([],"").
 showEveryVersion([Head|Next],StrOut):-
     showEveryVersion(Next,StrAnother),
@@ -291,8 +374,7 @@ showEveryVersion([Head|Next],StrOut):-
     string_concat(StrVersion,"\n",WithJump),
     string_concat(StrAnother,WithJump,StrOut).
 
-%descripción: retorna como string el contenido de un acceso en particular
-%dominio: lista de accesos (list access from docs), nombre de usuario(str),string de salida
+%descripcion: retorna como string el contenido de un acceso en particular
 showOneAccess([Head|_],User,StrOut):-
     getNameAccess(Head,User),
     !,
@@ -301,8 +383,7 @@ showOneAccess([_|NextAccess],User,StrOut):-
     showOneAccess(NextAccess,User,StrOut).
 
 
-%descripción: retorna como string el contenido de todos los  accesos del documento
-%dominio: lista de accesos (list access from docs), string de salida
+%descripcion: retorna como string el contenido de todos los accesos del documento
 showEveryAccess([],"").
 showEveryAccess([Head|Next],StrOut):- 
     showEveryAccess(Next,Out),
@@ -310,15 +391,14 @@ showEveryAccess([Head|Next],StrOut):-
     accessToString(Head,StrAccess),
     string_concat(WithJump,StrAccess,StrOut).
 
-%descripción: retorna como string todo el contenido de un documento
-%dominio: doc(documen a mostrar), string de sálida
+%descripcion: retorna como string todo el contenido de un documento
 showAllInformationDoc(Documento,StrOut):-
     getTitle(Documento,Title),%=============Title
     getCreation(Documento,DateCreation),
     dateToString(DateCreation,StrDate),%=============StrDate
     getId(Documento, Id),
     number_string(Id, StrId),
-    string_concat("Id: ",StrId, BId),
+    string_concat("Id Doc: ",StrId, BId),
     string_concat(BId,"\n",BLockId),
     getContentDoc(Documento,Versions),
     showEveryVersion(Versions,StrVersions),%=============StrVersions
@@ -341,8 +421,7 @@ showAllInformationDoc(Documento,StrOut):-
     string_concat(B,BlockAccesses,C),
     string_concat(C,"\n",StrOut).
 
-%descripción: retorna como string todo el contenido de un documento
-%dominio: doc(documen a mostrar), string de sálida
+%descripcion: retorna como string todo el contenido de un documento
 showDocForOwner(Documento,StrOut):-
     getTitle(Documento,Title),%=============Title
     getCreation(Documento,DateCreation),
@@ -365,6 +444,7 @@ showDocForOwner(Documento,StrOut):-
     string_concat(B,BlockAccesses,C),
     string_concat(C,"\n",StrOut).
 
+%descripcion: retorna el contenido que puede ver del documento un usuario invitado
 showDocForInvited(Documento, User, StrOut):-
     getTitle(Documento,Title),
     getAccessesDoc(Documento, Accesses),
@@ -381,18 +461,22 @@ showDocForInvited(Documento, User, StrOut):-
     string_concat(B,BlockAccesses,C),
     string_concat(C,"\n",StrOut).
     
+%descripcion: retorna un documento con su lista de accesos vacia
 revokeAccessesDoc(Documento, NewDocument):-
     setAccessesDoc(Documento,[],NewDocument).
 
+%descripcion: busca un contenido en particular dentro de un documento
 searchContentOnDoc(Doc,ContentLF):-
     getContentDoc(Doc,Versions),
     searchOnVersions(Versions,ContentLF).
 
+%descripcion: busca un contenido en particular dentro de la lista de versiones
 searchOnVersions([FirsVersion|_],ContentLF):-
     existContentinVersion(FirsVersion,ContentLF),!.
 searchOnVersions([_,NextVersions],ContentLF):-
     searchOnVersions(NextVersions,ContentLF).
 
+%descripcion: elimina una cantidad de caracteres en un documento
 deleteOnDocs(Doc, Date, NumberOfCharacters, NewDoc):-
     getContentDoc(Doc, Versions),
     contarlista(Versions, 0, Largo),
@@ -416,6 +500,7 @@ deleteOnDocs(Doc, Date, NumberOfCharacters, NewDoc):-
     append(Versions, [NewVersion], NewVersions),
     setVersionsDoc(Doc, NewVersions, NewDoc).
 
+%descripcion: reemplaza un contenido en particular dentro de un documento
 searchAndReplaceOnDocs(Doc, SearchText, ReplaceText, NewDoc):-
     getContentDoc(Doc, Versions),
     contarlista(Versions, 0, Largo),
@@ -463,14 +548,18 @@ versionToString
 Reglas
 */
 %de la forma: contenido("string"), fecha de creación(date), id versión (int), Salida
+%descripcion: retorna una version tras ingresar cada uno de sus componentes
 version(Contenido,Date,Id,[Contenido,Date,Id]).
 
+%descripcion: retorna un contenido de una version
 getContenidoVrsn([Contenido|_],Contenido).
+%descripcion: retorna la fecha de una version
 getDateVrsn([_,Date|_],Date).
+%descripcion: retorna el id de una version
 getIdVrsn([_,_,Id|_],Id).
-
+%descripcion: retorna una nueva version con su id reemplazado por el ingresado
 setIdVersion([Contenido,Date,_],NewId,[Contenido,Date,NewId]).
-
+%descripcion: retorna en string una version
 versionToString(Version,StrOut):-
     getContenidoVrsn(Version,ContentVrsn),
     getDateVrsn(Version,Date),
@@ -486,20 +575,12 @@ versionToString(Version,StrOut):-
     string_concat(B,G,M),
     string_concat(M,J,StrOut).
 
+%descripcion: retorna si existe un string dentro de alguna version
 existContentinVersion(Version,ContentLF):-
     getContenidoVrsn(Version,Contenido),
     existSubStr(Contenido,ContentLF).
 
-existSubStr(BigWord,LfWord):-
-    string_length(LfWord,Largo),
-    searchword(BigWord,LfWord,1,Largo).
 
-searchword(BigWord,LfWord,FirstNumber,FinalNumber):-
-    substring(BigWord,FirstNumber,FinalNumber,LfWord),!.
-searchword(BigWord,LfWord,FirstNumber,FinalNumber):-
-    string_length(BigWord,Largo),
-    substring(BigWord,2,Largo,NewBigWord),
-    searchword(NewBigWord,LfWord,FirstNumber,FinalNumber).
 
 %---------------------------------------------------------------------------------
 %-----------TDA Access------------------------------------------------------------
@@ -532,26 +613,26 @@ accessToString
 Reglas
 */
 % de la forma: nombre usuario(string), lista de accesos del user(list)
+%descripcion: retorna un acceso tras ingresar cada uno de sus componentes
 access(Name,ListKindAccess,[Name,ListKindAccess]).
-
+%descripcion: retorna el nombre de el acceso
 getNameAccess([Name|_],Name).
+%descripcion: retorna los permisos que tiene le acceso
 getListAccessUser([_,ListKindAccess|_],ListKindAccess).
 
-% lista de accesos del user(list from access), tipo de acceso a
-% buscar(CHAR)
+%descripcion: retorna un booleando tras ingresar la lista de permisos y el permiso buscado
 canWhat([],_):- !,fail.
 canWhat([FirstAccess|_],FirstAccess):- !, true.
 canWhat([_|NextKindAccess],Letter):-canWhat(NextKindAccess,Letter).
 
-% descripción: muestra los tipos de accesos que presenta una lista de 
-% accesos perteneciente a un acceso en particular
-%dominio: lista de tipos de acceso(list kind of access from access), string
+%descripcion: retorna como string la lista de permisos que tiene un usuario en particular
 listAccessToString([],"").
 listAccessToString([Head|Next],StrOut):-
     listAccessToString(Next,Out),
     string_concat(Out,"-",XD),
     string_concat(XD,Head,StrOut).
 
+%descripcion: retorna como string un acceso
 accessToString(Access,StrOut):-
     getNameAccess(Access,Name),
     getListAccessUser(Access,ListAccesses),
@@ -630,53 +711,59 @@ Reglas
 %de la forma: nombre de la plataforma(string), fecha de creacion(date),
 %usuario activo(string), usuarios registrados(list), documentos(list).
 
+%descripcion: retorna un paradigmaDocs pero con la lista de usuario actualizada
 setUsersPrdc([Name,Date,Log,_,Docs|_],NewUsers,[Name,Date,Log,NewUsers,Docs]).
+%descripcion: retorna un paradigmaDocs pero con el usuario logueado actualizado
 setLogPrdc([Name,Date,_,Users,Docs|_],NewLog,[Name,Date,NewLog,Users,Docs]).
+%descripcion: retorna un paradigmaDocs pero con la lista de documentos actualizada
 setDocsPrdc([Name,Date,Log,Users,_|_],NewDocs,[Name,Date,Log,Users,NewDocs]).
+%descripcion: retorna el nombre de un paradigmaDocs
 getNamePrdc([Name|_],Name).
+%descripcion: retorna la fecha de creacion de un paradigmaDocs
 getDatePrdc([_,Date|_],Date).
+%descripcion: retorna la lista de usuario de un paradigmaDocs
 getUsersPrdc([_,_,_,Users,_|_],Users).
+%descripcion: retorna el usuario logueado de un paradigmaDocs
 getLogPrdc([_,_,Log,_,_|_],Log).
+%descripcion: retorna la lista de documentos de un paradigmaDocs
 getDocsPrdc([_,_,_,_,Docs|_],Docs).
 
+%descripcion: verifica la existencia de algun usuario logueado
 existlog(Sn):-not(getLogPrdc(Sn,"")).
-
+%descripcion: cierra la sesion de paradigmaDocs
 closelog([Name,Date,_,Users,Docs|_],[Name,Date,"",Users,Docs]).
 
+%descripcion: verifica la existencia de algun usuario con un nombre de usuario en particular
 existUsername([],_):- !, fail.
 existUsername([FU|_],User):- sameUsername(FU,User),!,true.
 existUsername([_|LU],User):- existUsername(LU,User).
-
+%descripcion: verifica la existencia de un usuario
 existUser([],_):- !, fail.
 existUser([FU|_],User):- sameUsername(FU,User), samePassword(FU,User),!,true.
 existUser([_|LU],User):- existUser(LU,User).
-
-contarlista([],Count,Count).
-contarlista([_|L],Count,Total):- Newcount is Count+1, contarlista(L,Newcount,Total).
-
+%descripcion: retorna un documento tras senialar el id de tal
 getSomeDoc([FD|_],Id,FD):-getId(FD,Id),!,true.
 getSomeDoc([_|LD],Id,FD):-getSomeDoc(LD,Id,FD).
 
-% dominio: lista documentos(list), IdDoc(int), Docreemplazo(Doc), lista
-% documentos modificada
-setSomeDoc([],_,_,_):-!.
-setSomeDoc([Doc|LD],Id,NewDoc,NewLD):-getId(Doc,Id),!,[NewDoc,LD]=NewLD.
+%descripcion:retorna un documento tras senialar su id
+setSomeDoc([Doc|LD],Id,NewDoc,[NewDoc|LD]):-getId(Doc,Id),!.
 setSomeDoc([Doc|LD],Id,NewDoc,[Doc|NextLD]):-setSomeDoc(LD,Id,NewDoc,NextLD).
 
-% dominio: nueva lista usuarios(list), lista de usuarios presente en
-% prdcs(list from prdcs)
+%descripcion: verifica la existencia de una lista de usuario dentro de una lista de usuarios
 captchaUsers([],_).
 captchaUsers([FNewUser|NewUsers],UsersFPrdc):-
     user(FNewUser,"",[],U),
     existUsername(UsersFPrdc,U),
     captchaUsers(NewUsers,UsersFPrdc).
 
+%descripcion: muestra cada documento de una lista de documentos
 showEveryDoc([],_, "").
 showEveryDoc([FirstDoc|NextDocs],User,StrOut):-
     showEveryDoc(NextDocs,User,OutNextDocs),
     showDoc(FirstDoc, User, StrFirstDoc),
     string_concat(StrFirstDoc,OutNextDocs,StrOut).
 
+%descripcion: muestra cada usuario dentro de una lista de usuarios
 showEveryUser([],_,"").
 showEveryUser([FirstUser|NextUsers],"",StrOut):-
     showEveryUser(NextUsers,"",OutNextUsers),
@@ -689,20 +776,21 @@ showEveryUser([FirstUser|_],Username,StrOut):-
 showEveryUser([_|NextUsers],Username,StrOut):-
     showEveryUser(NextUsers,Username,StrOut).
 
-%dominio: list Docs, User, IdDoc, New list of docs
+%descripcion: revoca los permisos de un documento en particular tras senialar su id
 revokeAccessesifOwner([FirstDoc|NextDocs], User, Id,[NewDoc|NextDocs]):-
-    getId(FirstDoc,Id),
+    getId(FirstDoc,Id),!,
     isOwner(FirstDoc, User),
     revokeAccessesDoc(FirstDoc,NewDoc),!.
 revokeAccessesifOwner([FirstDoc|NextDocs],User,Id,[FirstDoc|NewDocs]):-
     revokeAccessesifOwner(NextDocs,User,Id,NewDocs).
 
-%dominio: list Docs, User, list of id's Docs, New list of docs
+%descripcion: revoca los permisos de multiples accesos senialando multiples ids
 revokemultiplyAccesesifOwner([],_, OldDocs,OldDocs).
 revokemultiplyAccesesifOwner([FirstId|NextIds], User, OldDocs,NewDocs):-
     revokeAccessesifOwner(OldDocs, User,FirstId,BeforesNewDocs),
     revokemultiplyAccesesifOwner(NextIds, User, BeforesNewDocs,NewDocs).
 
+%descripcion: revoca los permisos de todos los documento de los que se es propietario
 revokeAccessesAllDocsifOwner(_,[],[]).
 revokeAccessesAllDocsifOwner(User,[FirstDoc|NextDocs],[NewDoc|BeforeNextDocs]):-
     isOwner(FirstDoc,User),
@@ -711,6 +799,8 @@ revokeAccessesAllDocsifOwner(User,[FirstDoc|NextDocs],[NewDoc|BeforeNextDocs]):-
 revokeAccessesAllDocsifOwner(User,[FirstDoc|NextDocs],[FirstDoc|BeforeNextDocs]):-
     revokeAccessesAllDocsifOwner(User, NextDocs, BeforeNextDocs).
 
+%descripcion: busca un contenido en particular dentro de todos los documento, siempre y cuando
+% se puedan y retorna todos los documento que lo tienen
 searchContentOnDocs([],_,_,[]).
 searchContentOnDocs([FirstDoc|NextDocs],User,Contenido,[FirstDoc|DocsEncontrados]):-
     canWhatinDocs(FirstDoc,User,"R"),
@@ -724,7 +814,6 @@ searchContentOnDocs([_|NextDocs],User,Contenido,DocsEncontrados):-
 %------------------------------------requerimientos-------------------------------
 %---------------------------------------------------------------------------------
 paradigmaDocs(Name, Date, [Name, Date, "", [],[]]).
-
 paradigmaDocsRegister(Sn1, Fecha, Username, Password, Sn2):-
     user(Username,Password, Fecha, User),
     getUsersPrdc(Sn1,ListUsers),
@@ -863,7 +952,7 @@ paradigmaDocsSearchAndReplace(Sn1, DocumentId,  SearchText, ReplaceText, Sn2):-
 %---------------------------------------------------------------------------------
 %-----------------------------------testeos---------------------------------------
 %---------------------------------------------------------------------------------
-
+/*
 test1(PD4):- 
     date(20, 12, 2015, D1),
     date(1, 12, 2021, D2), date(3, 12,2021, D3),
@@ -919,7 +1008,8 @@ test6(StrOut):-
 
    
 
-test3():-canWhatinDocs(["titulo",[1,2,2020],0,"Owner","contenido",[["vflores",["R","W"]]]],"vflores","R").
+test3():
+    -canWhatinDocs(["titulo",[1,2,2020],0,"Owner","contenido",[["vflores",["R","W"]]]],"vflores","R").
 
 
 test4():-
@@ -939,4 +1029,166 @@ test7(NewDocs):-
         ["hola mundo, este es elcontenido de un archivo", [1, 12, 2021], 2]]
         , [["alopez", ["W"]], ["crios", ["W", "R"]]]], [[[[]]]]]
     ,NewDocs).
+*/
 
+
+% === Testeo paradigmadocsDocs ===
+test1(PD1):-% generación de plataforma con nombre "google docs"
+    date(20, 12, 2015, D1),
+    paradigmaDocs("google Docs", D1, PD1).
+
+
+% === Testeos paradigmaDocsRegister ===
+test2(PD4):- % se registran 3 usuarios distintos
+    date(20, 12, 2015, D1),
+    date(1, 12, 2021, D2),
+    date(3,12, 2021, D3),
+    test1(PD1),
+    paradigmaDocsRegister(PD1, D2, "ElPepe", "123456", PD2),
+    paradigmaDocsRegister(PD2, D3, "Sebastian", "asdfgh", PD3),
+    paradigmaDocsRegister(PD3, D1, "CharlesAranguis", "123456", PD4).
+test3(PD5):- % intento de registro de usuario que ya existe dentro de la plataforma
+    date(20, 12, 2015, D1),
+    test2(PD4),
+    paradigmaDocsRegister(PD4, D1, "ElPepe", "rth",PD5).
+
+% === Testeos paradigmaDocsLogin ===
+test4(PD6):- % Se logue "ElPepe"
+    test2(PD5),
+    paradigmaDocsLogin(PD5, "ElPepe", "123456", PD6).
+test5(PD6):- % Se logue "Sebastian"
+    test2(PD5),
+    paradigmaDocsLogin(PD5, "Sebastian", "asdfgh", PD6).
+test6(PD6):-% Intento de logueo de con contrasenia incorrecta
+    test2(PD5),
+    paradigmaDocsLogin(PD5, "Sebastian", "123456", PD6).
+% === Testeos paradigmaDocsCreate ===
+test7(PD14):- %se generan 3 documentos distintos dentro de la plataforma
+    date(20, 12, 2015, D1),
+    date(1, 12, 2021, D2),
+    date(3,12, 2021, D3),
+    test5(PD6),
+    paradigmaDocsLogin(PD6, "ElPepe", "123456", PD7),
+    paradigmaDocsCreate(PD7, D1, "Lista de deseos", "Aqui iran mis deseos: ", PD8),
+    paradigmaDocsLogin(PD8, "Sebastian", "asdfgh", PD9),
+    paradigmaDocsCreate(PD9, D2, "Resumen Ingles", "escribire mi resumen de infles aqui", PD10),
+    paradigmaDocsLogin(PD10, "CharlesAranguis","123456", PD11),
+    paradigmaDocsCreate(PD11, D3, "Filosofio", "", PD12),
+    paradigmaDocsLogin(PD12, "ElPepe", "123456", PD13),
+    paradigmaDocsCreate(PD13, D1, "Resumen", "No han pasado clase aun.", PD14).
+
+test8(PD15):- %Se trata de generar un documento sin haberse logueado antes
+    date(20, 12, 2015, D1),
+    test7(PD14),
+    paradigmaDocsCreate(PD14, D1, "pruebas", "contenido",PD15).
+
+% === Testeos paradigmaDocsShare ===
+
+test9(PD20):-
+    test7(PD14),
+    paradigmaDocsLogin(PD14, "ElPepe", "123456", PD15),
+    %Se comparten permisos del documento 0 con Charles y Seba  de tipo 
+    %"W", "R" y "C"
+    paradigmaDocsShare(PD15, 0, ["W","R","C"],["CharlesAranguis", "Sebastian"],PD16),
+    paradigmaDocsLogin(PD16, "ElPepe", "123456", PD17),
+    %Se comparten permisos del documento 3 con Charles y Seba  de tipo 
+    %"R" y "C"
+    paradigmaDocsShare(PD17, 3, ["R","C"],["CharlesAranguis", "Sebastian"],PD18),
+    paradigmaDocsLogin(PD18, "CharlesAranguis", "123456", PD19),
+    %Se comparten permisos del documento 2 con ElPepe y Seba  de tipo 
+    %"R" y "C"
+    paradigmaDocsShare(PD19, 2, ["W","R","C"], ["ElPepe", "Sebastian"],PD20).
+test10(PD22):- % se trata de compartir un documento del que no se es propietario
+    test9(PD20),
+    paradigmaDocsLogin(PD20, "CharlesAranguis", "123456", PD21),
+    paradigmaDocsShare(PD21, 0, ["W"], ["ElPepe"],PD22).
+
+% === Testeos paradigmaDocsAdd ===
+
+test11(PD26):- % se agrega contenido a diferentes documentos
+    date(1, 12, 2021, D2),
+    test9(PD20),
+    paradigmaDocsLogin(PD20, "ElPepe", "123456", PD21),
+    paradigmaDocsAdd(PD21, 0, D2, "Primer deseo: conseguir pasar la carrera", PD22),
+    paradigmaDocsLogin(PD22, "CharlesAranguis", "123456", PD23),
+    paradigmaDocsAdd(PD23, 0, D2, " Segundo deseo: conseguir una casa", PD24),
+    paradigmaDocsLogin(PD24,"Sebastian", "asdfgh", PD25),
+    paradigmaDocsAdd(PD25, 2, D2,"Una de las principales ramas de la filosofia...", PD26).
+
+test12(PD28):- % se trata de agregar contenido a un documento en el que no se tiene permiso.
+    date(1, 12, 2021, D2),
+    test11(PD26),
+    paradigmaDocsLogin(PD26, "CharlesAranguis", "123456", PD27),
+    paradigmaDocsAdd(PD27, 3,D2,"puedo escribir en este documento",PD28).
+
+% === Testeos paradigmaDocsRestoreVersion ===
+
+test13(PD28):- % se restaura la versión 1 del documento 0
+    test11(PD26),
+    paradigmaDocsLogin(PD26, "ElPepe", "123456", PD27),
+    paradigmaDocsRestoreVersion(PD27, 0, 1, PD28).
+
+test14(PD30):- %se trata de restaurar una versión sin ser autor
+    test13(PD28),
+    paradigmaDocsLogin(PD28, "CharlesAranguis", "123456", PD29),
+    paradigmaDocsRestoreVersion(PD29, 0,2, PD30).
+
+% === Testeos paradigmaDocsToString ===
+
+test15(StrOut):- % con usuario logueado
+    test13(PD28),
+    paradigmaDocsLogin(PD28, "CharlesAranguis", "123456", PD29),
+    paradigmaDocsToString(PD29, StrOut).
+
+test16(StrOut):- % sin usuario logueado
+    test13(PD28),
+    paradigmaDocsToString(PD28, StrOut).
+
+% === Testeos paradigmaDocsRevokeAllAccesses ===
+
+test17(PD30):- % accesos eliminados para documentos en particular
+    test13(PD28),
+    paradigmaDocsLogin(PD28, "CharlesAranguis", "123456", PD29),
+    paradigmaDocsRevokeAllAccesses(PD29, [2], PD30).
+
+test18(PD32):- % accesos eliminados para todo documento al que se es owner
+    test17(PD30),
+    paradigmaDocsLogin(PD30, "ElPepe", "123456", PD31),
+    paradigmaDocsRevokeAllAccesses(PD31, [], PD32).
+
+test19(PD34):- % se trata de revocar accesos a un documento del que no se es propietario
+    test18(PD32),
+    paradigmaDocsLogin(PD32, "CharlesAranguis", "123456", PD33),
+    paradigmaDocsRevokeAllAccesses(PD33, [0], PD34).
+
+% === Testeos paradigmaDocsSearch ===
+
+test20(Docs):- % se buscan documentos con un string en particular
+    test13(PD28),
+    paradigmaDocsLogin(PD28, "CharlesAranguis", "123456", PD29),
+    paradigmaDocsSearch(PD29, "Aqui", Docs).
+
+test21(Docs):- % se buscan documentos con un strin inexistente
+    test13(PD28),
+    paradigmaDocsLogin(PD28, "CharlesAranguis", "123456", PD29),
+    paradigmaDocsSearch(PD29, "cepillin", Docs).
+
+% === Testeos paradigmaDocsDelete ===
+
+test22(PD30):- % se borran 10 caracteres del documento 0
+    date(20, 12, 2015, D1),
+    test13(PD28),
+    paradigmaDocsLogin(PD28, "CharlesAranguis", "123456", PD29),
+    paradigmaDocsDelete(PD29, 0, D1, 10, PD30).
+
+test23(PD32):- % se tratan de borrar caracteres en documento sin permisos
+    date(20, 12, 2015, D1),
+    test22(PD30),
+    paradigmaDocsLogin(PD30, "CharlesAranguis", "123456", PD31),
+    paradigmaDocsDelete(PD31, 3, D1, 10, PD32).
+
+% === Testeos paradigmaDocsSearchAndReplace ===
+test24(PD34):-
+    test22(PD32),
+    paradigmaDocsLogin(PD32, "CharlesAranguis", "123456", PD33),
+    paradigmaDocsSearchAndReplace(PD33, 0,"aqui", "Lejos", PD34).
