@@ -840,7 +840,7 @@ paradigmaDocsShare(Sn1,DocumentId,ListaPermisos,ListaUsernamesPermitidos,Sn2):-
     getLogPrdc(Sn1,Logged),
     getDocsPrdc(Sn1,ListDocs),
     getSomeDoc(ListDocs,DocumentId,Doc0),
-    isOwner(Doc0,Logged),
+    (isOwner(Doc0,Logged);canWhatinDocs(Doc0,Logged,"S")),
     getUsersPrdc(Sn1,ListUsers),
     captchaUsers(ListaUsernamesPermitidos,ListUsers),
     getAccessesDoc(Doc0,Accesses),
