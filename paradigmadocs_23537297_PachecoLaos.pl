@@ -1,5 +1,5 @@
 %---------------------------------------------------------------------------------
-%--------------------------Funciones Generales------------------------------------
+%--------------------------Predicados Generales------------------------------------
 %---------------------------------------------------------------------------------
 /*
 ======Dominios======
@@ -52,7 +52,7 @@ contarlista([_|L],FirstNumber,Total):- Newcount is FirstNumber+1, contarlista(L,
 
 
 /*
-Fundamentos para poder ocupar estas funciones
+Fundamentos para poder ocupar estas predicados
 %descripcion: agrega al final de una lista un componente
 append([],Componente,[Componente]).
 append([FirstComp|Next], Componente, [FirstComp|BeforeLista]):-
